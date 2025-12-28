@@ -157,7 +157,7 @@ const AiLogPanel: React.FC = () => {
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                <h2 className="text-xl font-bold">{T.log.title || 'AI API Log'}</h2>
+                <h2 className="text-lg sm:text-xl font-semibold">{T.log.title || 'AI API Log'}</h2>
                 {logs.length > 0 && <button onClick={handleClearLogs} className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 font-semibold"><TrashIcon className="w-4 h-4" /> {T.log.clear || 'Clear Logs'}</button>}
             </div>
             {isLoading ? <div className="flex-1 flex justify-center items-center py-20"><Spinner /></div> : logs.length === 0 ? (

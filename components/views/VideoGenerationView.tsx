@@ -139,7 +139,12 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
   useEffect(() => {
     try {
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(allStates));
-    } catch (e) { console.error("Failed to save state to session storage", e); }
+    } catch (e: any) {
+        // Only log if it's not a quota error (to avoid spam)
+        if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+            console.error("Failed to save state to session storage", e);
+        }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     prompt, negativePrompt, dialogue, dialogueAudio,
@@ -441,12 +446,12 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
   const leftPanel = (
     <>
         <div>
-            <h1 className="text-xl font-bold sm:text-3xl">AI Video Generator</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">AI Video Generator</h1>
             <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">Create high-quality videos from text or images.</p>
         </div>
         
         <div>
-            <h2 className="text-lg font-semibold mb-2">Model & Format</h2>
+            <h2 className="text-base sm:text-lg font-semibold mb-2">Model & Format</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Aspect Ratio</label>
@@ -465,7 +470,7 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
         </div>
 
         <div>
-            <h2 className="text-lg font-semibold mb-2">Reference Image (Optional)</h2>
+            <h2 className="text-base sm:text-lg font-semibold mb-2">Reference Image (Optional)</h2>
             {previewUrl ? (
                  <div className="relative w-full aspect-video rounded-lg overflow-hidden">
                     <img src={previewUrl} alt="Reference Preview" className="w-full h-full object-contain bg-neutral-100 dark:bg-neutral-800" />
@@ -586,7 +591,6 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
                 </div>
             </div>
             <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 p-2 bg-neutral-100 dark:bg-neutral-800/50 rounded-md space-y-1">
-                <p dangerouslySetInnerHTML={{ __html: 'Voiceover is only supported by the <strong>Veo 3 model</strong> and works best with English.' }}/>
                 <p>Please note: Voiceover language may be inconsistent. If you are not satisfied, you can regenerate the video by pressing the 'Generate Video' button again.</p>
             </div>
         </div>

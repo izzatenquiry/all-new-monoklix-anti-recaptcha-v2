@@ -40,10 +40,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ currentUser, navigateTo }
           
           <div className="relative z-10 text-left w-full">
               <div className="flex justify-between items-center w-full">
-                  <h3 className="font-bold text-lg text-neutral-900 dark:text-white group-hover:text-glow transition-all">{title}</h3>
+                  <h3 className="font-bold text-base sm:text-lg text-neutral-900 dark:text-white group-hover:text-glow transition-all">{title}</h3>
                   <ChevronRightIcon className="w-4 h-4 text-neutral-600 dark:text-white/30 group-hover:text-neutral-900 dark:group-hover:text-white group-hover:translate-x-1 transition-all" />
               </div>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 font-medium">{desc}</p>
+              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1 font-medium">{desc}</p>
           </div>
       </button>
   );
@@ -59,10 +59,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ currentUser, navigateTo }
                 <div className="h-px w-8 bg-brand-start"></div>
                 <span className="text-xs font-mono text-brand-start tracking-widest uppercase">System Online</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-neutral-900 dark:text-white tracking-tight leading-none">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-black text-neutral-900 dark:text-white tracking-tight leading-none">
                 HELLO, <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-start to-brand-end">{currentUser.fullName?.split(' ')[0] || currentUser.username}</span>
             </h1>
-            <p className="text-neutral-600 dark:text-neutral-400 mt-2 text-lg font-light">Welcome to the future of content creation.</p>
+            <p className="text-neutral-600 dark:text-neutral-400 mt-2 text-sm sm:text-base lg:text-lg font-light">Welcome to the future of content creation.</p>
         </div>
 
         {/* Stats Module (Moved to Header) */}

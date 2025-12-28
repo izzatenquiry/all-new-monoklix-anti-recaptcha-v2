@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { saveUserPersonalAuthToken } from '../services/userService';
 import { type User } from '../types';
 import { KeyIcon, CheckCircleIcon, XIcon, AlertTriangleIcon, InformationCircleIcon, EyeIcon, EyeOffIcon, SparklesIcon } from './Icons';
@@ -21,6 +21,8 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [testStatus, setTestStatus] = useState<'idle' | 'testing'>('idle');
     const [testResults, setTestResults] = useState<TokenTestResult[] | null>(null);
+    const [tokenSaved, setTokenSaved] = useState(false);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const T = getTranslations().settingsView;
     const T_Api = T.api;
 
@@ -37,6 +39,7 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
     const [showAntiCaptchaKey, setShowAntiCaptchaKey] = useState(false);
     const [antiCaptchaTestStatus, setAntiCaptchaTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
     const [antiCaptchaTestMessage, setAntiCaptchaTestMessage] = useState<string>('');
+    const [apiKeySaved, setApiKeySaved] = useState(false);
     
     // Initialize token from current user
     useEffect(() => {
@@ -45,13 +48,72 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
         }
     }, [currentUser?.personalAuthToken]);
 
+    // Auto-save Flow Token with debounce (2 seconds after user stops typing)
+    useEffect(() => {
+        // Clear previous timeout
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        // Don't save if token is empty or same as current user's token
+        if (!flowToken.trim() || flowToken.trim() === currentUser?.personalAuthToken) {
+            return;
+        }
+
+        // Don't save if user is not logged in
+        if (!currentUser) {
+            return;
+        }
+
+        // Set debounce timer
+        saveTimeoutRef.current = setTimeout(async () => {
+            try {
+                setIsSaving(true);
+                setError(null);
+                const result = await saveUserPersonalAuthToken(currentUser.id, flowToken.trim());
+                
+                if (result.success) {
+                    setTokenSaved(true);
+                    setSuccessMessage('Flow token saved successfully!');
+                    if (onUserUpdate) {
+                        onUserUpdate(result.user);
+                    }
+                    // Clear saved indicator after 3 seconds
+                    setTimeout(() => {
+                        setTokenSaved(false);
+                        setSuccessMessage(null);
+                    }, 3000);
+                } else {
+                    setError(result.message || 'Failed to save token');
+                }
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'An error occurred');
+            } finally {
+                setIsSaving(false);
+            }
+        }, 2000); // Wait 2 seconds after user stops typing
+
+        // Cleanup
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [flowToken, currentUser, onUserUpdate]);
+
     // Save Anti-Captcha settings to localStorage
     useEffect(() => {
         localStorage.setItem('antiCaptchaEnabled', enableAntiCaptcha.toString());
     }, [enableAntiCaptcha]);
 
     useEffect(() => {
-        localStorage.setItem('antiCaptchaApiKey', antiCaptchaApiKey);
+        if (antiCaptchaApiKey.trim()) {
+            localStorage.setItem('antiCaptchaApiKey', antiCaptchaApiKey);
+            setApiKeySaved(true);
+            // Clear saved indicator after 2 seconds
+            const timer = setTimeout(() => setApiKeySaved(false), 2000);
+            return () => clearTimeout(timer);
+        }
     }, [antiCaptchaApiKey]);
 
     useEffect(() => {
@@ -115,9 +177,8 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                 if (onUserUpdate) {
                     onUserUpdate(result.user);
                 }
-                // Clear input after successful save
+                // Clear success message after 3 seconds, but keep token in field
                 setTimeout(() => {
-                    setFlowToken('');
                     setSaveStatus('idle');
                     setSuccessMessage(null);
                 }, 3000);
@@ -183,110 +244,7 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
     return (
         <div className="w-full">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                {/* Left Panel: Anti-Captcha Configuration */}
-                <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm h-full overflow-y-auto">
-                    <div className="mb-8">
-                        <h3 className="text-lg font-bold mb-4 text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
-                            <KeyIcon className="w-5 h-5 text-primary-500" />
-                            Anti-Captcha Configuration
-                        </h3>
-
-                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800 mb-4">
-                            <div className="flex items-start gap-3">
-                                <InformationCircleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                                <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    <p className="font-semibold mb-1">Required for Video/Image Generation</p>
-                                    <p>Google API requires reCAPTCHA v3 Enterprise tokens. Enable this to automatically solve captchas using <a href="https://anti-captcha.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">anti-captcha.com</a> service.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Enable Toggle */}
-                        <div className="mb-4">
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={enableAntiCaptcha}
-                                    onChange={(e) => setEnableAntiCaptcha(e.target.checked)}
-                                    className="w-5 h-5 text-primary-600 bg-neutral-100 border-neutral-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600"
-                                />
-                                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                    Enable Anti-Captcha Integration
-                                </span>
-                            </label>
-                        </div>
-
-                        {enableAntiCaptcha && (
-                            <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
-                                {/* API Key Input */}
-                                <div>
-                                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                                        Anti-Captcha API Key *
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            type={showAntiCaptchaKey ? 'text' : 'password'}
-                                            value={antiCaptchaApiKey}
-                                            onChange={(e) => setAntiCaptchaApiKey(e.target.value)}
-                                            placeholder="Enter your anti-captcha.com API key"
-                                            className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2.5 pr-10 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"
-                                        />
-                                        <button
-                                            onClick={() => setShowAntiCaptchaKey(!showAntiCaptchaKey)}
-                                            className="absolute inset-y-0 right-0 px-3 flex items-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        >
-                                            {showAntiCaptchaKey ? <EyeOffIcon className="w-4 h-4"/> : <EyeIcon className="w-4 h-4"/>}
-                                        </button>
-                                    </div>
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                                        Get your API key from <a href="https://anti-captcha.com/clients/settings/apisetup" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">anti-captcha.com dashboard</a>
-                                    </p>
-                                </div>
-
-                                {/* Project ID Input */}
-                                <div>
-                                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                                        Project ID (Optional)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={antiCaptchaProjectId}
-                                        onChange={(e) => setAntiCaptchaProjectId(e.target.value)}
-                                        placeholder="e.g., 92f722f2-8241-4a32-a890-8ac07ffc508b"
-                                        className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"
-                                    />
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                                        Leave empty to auto-generate. Used for tracking purposes.
-                                    </p>
-                                </div>
-
-                                {/* Test Button and Status */}
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    <button
-                                        onClick={handleTestAntiCaptcha}
-                                        disabled={!antiCaptchaApiKey || antiCaptchaTestStatus === 'testing'}
-                                        className="px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                                    >
-                                        {antiCaptchaTestStatus === 'testing' ? <Spinner /> : <SparklesIcon className="w-4 h-4" />}
-                                        Test API Key
-                                    </button>
-
-                                    {antiCaptchaTestMessage && (
-                                        <span className={`text-sm font-medium ${
-                                            antiCaptchaTestStatus === 'success' ? 'text-green-600' :
-                                            antiCaptchaTestStatus === 'error' ? 'text-red-600' :
-                                            'text-neutral-600'
-                                        }`}>
-                                            {antiCaptchaTestMessage}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Panel: Flow Login */}
+                {/* Left Panel: Flow Login */}
                 <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-sm p-6 h-full overflow-y-auto">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
@@ -335,18 +293,27 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                                     setTestResults(null);
                                 }}
                                 placeholder="Paste your Flow token here"
-                                className="w-full px-4 py-3 pr-10 bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"
+                                className="w-full px-4 py-3 pr-20 bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"
                             />
-                            <button
-                                type="button"
-                                onClick={() => setShowToken(!showToken)}
-                                className="absolute inset-y-0 right-0 px-3 flex items-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                            >
-                                {showToken ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-                            </button>
+                            <div className="absolute inset-y-0 right-0 flex items-center gap-2 pr-2">
+                                {tokenSaved && flowToken.trim() && (
+                                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">Saved</span>
+                                )}
+                                {isSaving && (
+                                    <Spinner />
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowToken(!showToken)}
+                                    className="px-3 flex items-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                                >
+                                    {showToken ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </div>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                             Token dari akun Flow Anda (labs.google/fx/tools/flow)
+                            {flowToken.trim() && <span className="ml-2 text-green-600 dark:text-green-400">• Auto-saved</span>}
                         </p>
                     </div>
 
@@ -370,48 +337,44 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                         </div>
                     )}
 
-                    <div className="flex items-center gap-3 flex-wrap">
+                    <div className="space-y-3">
+                        {/* Baris 1: Login Google Flow */}
                         <button
                             onClick={handleOpenFlow}
-                            className="flex items-center justify-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-sm font-semibold py-2 px-4 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)]"
+                            className="w-full flex items-center justify-center gap-2 bg-neutral-300 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 text-sm font-semibold py-2.5 px-4 rounded-lg hover:bg-neutral-400 dark:hover:bg-neutral-700 transition-colors shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)]"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                             Login Google Flow
                         </button>
+                        
+                        {/* Baris 2: Get Token */}
                         <button
                             onClick={handleGetToken}
-                            className="flex items-center justify-center gap-2 bg-primary-600 dark:bg-primary-700 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 bg-primary-600 dark:bg-primary-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
                         >
                             <KeyIcon className="w-4 h-4" />
                             Get Token
                         </button>
-                        <button
-                            onClick={handleSaveToken}
-                            disabled={isSaving || !flowToken.trim()}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
-                        >
-                            {isSaving ? <Spinner /> : T_Api.save}
-                        </button>
+                        
+                        {/* Baris 3: Health Test Button */}
                         <button
                             onClick={handleTestToken}
                             disabled={(!flowToken.trim() && !currentUser?.personalAuthToken) || testStatus === 'testing'}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold py-2.5 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
                         >
                             {testStatus === 'testing' ? <Spinner /> : <SparklesIcon className="w-4 h-4" />}
-                            {T_Api.runTest}
+                            Health Test
                         </button>
                         
-                        {saveStatus === 'success' && (
-                            <span className="text-sm text-green-600 font-medium flex items-center gap-1">
-                                <CheckCircleIcon className="w-4 h-4"/> {T_Api.updated}
-                            </span>
-                        )}
-                        {saveStatus === 'error' && (
-                            <span className="text-sm text-red-600 font-medium flex items-center gap-1">
-                                <XIcon className="w-4 h-4"/> {T_Api.saveFail}
-                            </span>
+                        {/* Status Messages */}
+                        {error && (
+                            <div className="text-center">
+                                <span className="text-sm text-red-600 dark:text-red-400 font-medium flex items-center justify-center gap-1">
+                                    <XIcon className="w-4 h-4"/> {error}
+                                </span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -422,15 +385,124 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                         <div className="text-sm text-blue-800 dark:text-blue-200">
                             <p className="font-semibold mb-2">Cara Mengambil Token dari Flow:</p>
                             <ol className="text-xs space-y-1 list-decimal list-inside">
-                                <li>Klik tombol "Get Token" untuk membuka halaman session API</li>
+                                <li>Klik tombol "Login Google Flow" untuk login ke akun Google Flow anda</li>
+                                <li>Selepas login, klik tombol "Get Token" untuk membuka halaman session API</li>
                                 <li>Copy token dari response JSON yang muncul</li>
                                 <li>Paste token tersebut di form di atas</li>
-                                <li>Klik "Save Token" untuk menyimpan</li>
-                                <li className="mt-2 text-neutral-600 dark:text-neutral-400">Atau gunakan cara manual: Klik "Login Google Flow" → Login → Buka Developer Tools (F12) → Network tab → Cari request API → Copy token dari header Authorization</li>
+                                <li>Token akan auto-save secara automatik</li>
                             </ol>
                         </div>
                     </div>
                 </div>
+                </div>
+
+                {/* Right Panel: Anti-Captcha Configuration */}
+                <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm h-full overflow-y-auto">
+                    <div className="mb-8">
+                        <h3 className="text-base sm:text-lg font-bold mb-4 text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
+                            <KeyIcon className="w-5 h-5 text-primary-500" />
+                            Anti-Captcha Configuration
+                        </h3>
+
+                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800 mb-4">
+                            <div className="flex items-start gap-3">
+                                <InformationCircleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                                <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                                    <p className="font-semibold mb-1">Required for Video/Image Generation</p>
+                                    <p>Google API requires reCAPTCHA v3 Enterprise tokens. Enable this to automatically solve captchas using <a href="https://anti-captcha.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">anti-captcha.com</a> service.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Enable Toggle */}
+                        <div className="mb-4">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={enableAntiCaptcha}
+                                    onChange={(e) => setEnableAntiCaptcha(e.target.checked)}
+                                    className="w-5 h-5 text-primary-600 bg-neutral-100 border-neutral-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600"
+                                />
+                                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                    Enable Anti-Captcha Integration
+                                </span>
+                            </label>
+                        </div>
+
+                        {enableAntiCaptcha && (
+                            <div className="space-y-4 pl-8 border-l-2 border-primary-200 dark:border-primary-800">
+                                {/* API Key Input */}
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                        Anti-Captcha API Key *
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showAntiCaptchaKey ? 'text' : 'password'}
+                                            value={antiCaptchaApiKey}
+                                            onChange={(e) => setAntiCaptchaApiKey(e.target.value)}
+                                            placeholder="Enter your anti-captcha.com API key"
+                                            className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2.5 pr-10 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"
+                                        />
+                                        <div className="absolute inset-y-0 right-0 flex items-center gap-2 pr-2">
+                                            {apiKeySaved && antiCaptchaApiKey.trim() && (
+                                                <span className="text-xs text-green-600 dark:text-green-400 font-medium">Saved</span>
+                                            )}
+                                            <button
+                                                onClick={() => setShowAntiCaptchaKey(!showAntiCaptchaKey)}
+                                                className="px-3 flex items-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                                            >
+                                                {showAntiCaptchaKey ? <EyeOffIcon className="w-4 h-4"/> : <EyeIcon className="w-4 h-4"/>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                                        Get your API key from <a href="https://anti-captcha.com/clients/settings/apisetup" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">anti-captcha.com dashboard</a>
+                                        {antiCaptchaApiKey.trim() && <span className="ml-2 text-green-600 dark:text-green-400">• Auto-saved</span>}
+                                    </p>
+                                </div>
+
+                                {/* Project ID Input */}
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                        Project ID (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={antiCaptchaProjectId}
+                                        onChange={(e) => setAntiCaptchaProjectId(e.target.value)}
+                                        placeholder="e.g., 92f722f2-8241-4a32-a890-8ac07ffc508b"
+                                        className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"
+                                    />
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                                        Leave empty to auto-generate. Used for tracking purposes.
+                                    </p>
+                                </div>
+
+                                {/* Test Button and Status */}
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <button
+                                        onClick={handleTestAntiCaptcha}
+                                        disabled={!antiCaptchaApiKey || antiCaptchaTestStatus === 'testing'}
+                                        className="px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {antiCaptchaTestStatus === 'testing' ? <Spinner /> : <SparklesIcon className="w-4 h-4" />}
+                                        Test API Key
+                                    </button>
+
+                                    {antiCaptchaTestMessage && (
+                                        <span className={`text-sm font-medium ${
+                                            antiCaptchaTestStatus === 'success' ? 'text-green-600' :
+                                            antiCaptchaTestStatus === 'error' ? 'text-red-600' :
+                                            'text-neutral-600'
+                                        }`}>
+                                            {antiCaptchaTestMessage}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

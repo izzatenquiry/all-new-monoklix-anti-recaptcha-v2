@@ -93,7 +93,11 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
             creativeState, customPrompt, numberOfImages, aspectRatio
         };
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-    } catch (e) { console.error("Failed to save state to session storage", e); }
+    } catch (e: any) {
+        if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+            console.error("Failed to save state to session storage", e);
+        }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [creativeState, customPrompt, numberOfImages, aspectRatio]);
 
@@ -351,7 +355,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
   const leftPanel = (
     <>
       <div>
-        <h1 className="text-xl font-bold sm:text-3xl">{T.title}</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">{T.title}</h1>
         <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">{T.subtitle}</p>
       </div>
 

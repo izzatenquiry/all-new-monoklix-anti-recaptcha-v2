@@ -341,10 +341,10 @@ const App: React.FC = () => {
                         {/* Theme Switcher */}
                         <ThemeSwitcher theme={theme} setTheme={setTheme} />
 
-                        {/* Reload Button */}
+                        {/* Reload Button - Desktop only */}
                         <button
                             onClick={() => window.location.reload()}
-                            className="p-2 rounded-lg hover:bg-white/10 dark:hover:bg-white/10 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                            className="hidden md:flex p-2 rounded-lg hover:bg-white/10 dark:hover:bg-white/10 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
                             title="Refresh App"
                         >
                             <RefreshCwIcon className="w-5 h-5" />

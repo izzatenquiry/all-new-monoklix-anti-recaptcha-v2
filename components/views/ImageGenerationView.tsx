@@ -94,7 +94,11 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
     try {
       const stateToSave = { prompt, numberOfImages, selectedImageIndex, negativePrompt, aspectRatio, creativeState };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-    } catch (e) { console.error("Failed to save state to session storage", e); }
+    } catch (e: any) {
+        if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+            console.error("Failed to save state to session storage", e);
+        }
+    }
   }, [prompt, numberOfImages, selectedImageIndex, negativePrompt, aspectRatio, creativeState]);
 
   useEffect(() => {
@@ -462,7 +466,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
   const leftPanel = (
     <>
       <div>
-        <h1 className="text-xl font-bold sm:text-3xl">{isEditing ? 'AI Image Editor' : 'AI Image Generation'}</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">{isEditing ? 'AI Image Editor' : 'AI Image Generation'}</h1>
         <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">{isEditing ? 'Edit your images with simple text commands.' : 'Create stunning images from text descriptions.'}</p>
       </div>
       

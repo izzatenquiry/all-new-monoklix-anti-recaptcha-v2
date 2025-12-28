@@ -210,11 +210,11 @@ const SocialPostStudioView: React.FC<SocialPostStudioViewProps> = ({ language, c
 
     return (
         <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold sm:text-3xl flex items-center gap-3">
-                <MegaphoneIcon className="w-8 h-8 text-primary-500" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-3">
+                <MegaphoneIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary-500" />
                 Social Post Studio
             </h1>
-            <p className="text-neutral-500 dark:text-neutral-400 mt-1">Generate AI captions and prepare your social media posts.</p>
+            <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">Generate AI captions and prepare your social media posts.</p>
             
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column */}

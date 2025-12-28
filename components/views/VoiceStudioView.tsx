@@ -92,7 +92,11 @@ const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({ language }) => {
         try {
             const stateToSave = { script, actor, mood, generationMode, musicStyle };
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-        } catch (e) { console.error("Failed to save state to session storage", e); }
+        } catch (e: any) {
+            if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+                console.error("Failed to save state to session storage", e);
+            }
+        }
     }, [script, actor, mood, generationMode, musicStyle]);
 
     useEffect(() => {
@@ -163,7 +167,7 @@ const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({ language }) => {
     const leftPanel = (
         <>
             <div>
-                <h1 className="text-xl font-bold sm:text-3xl">AI Voice Studio</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">AI Voice Studio</h1>
                 <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">Turn text into high-quality, natural-sounding speech.</p>
             </div>
 

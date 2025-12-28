@@ -61,7 +61,11 @@ const MarketingCopyView: React.FC<MarketingCopyViewProps> = ({ language }) => {
         try {
             const stateToSave = { productDetails, targetAudience, keywords, selectedTone, selectedLanguage, generatedCopy };
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-        } catch (e) { console.error("Failed to save state to session storage", e); }
+        } catch (e: any) {
+            if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+                console.error("Failed to save state to session storage", e);
+            }
+        }
     }, [productDetails, targetAudience, keywords, selectedTone, selectedLanguage, generatedCopy]);
 
     const handleGenerate = useCallback(async () => {
@@ -119,7 +123,7 @@ const MarketingCopyView: React.FC<MarketingCopyViewProps> = ({ language }) => {
     const leftPanel = (
         <>
             <div>
-                <h1 className="text-xl font-bold sm:text-3xl">AI Marketing Copywriter</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">AI Marketing Copywriter</h1>
                 <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">Generate persuasive copy for ads, posts, and websites.</p>
             </div>
 

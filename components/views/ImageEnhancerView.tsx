@@ -76,7 +76,11 @@ const ImageEnhancerView: React.FC<ImageEnhancerViewProps> = ({ onReEdit, onCreat
       // Only save non-image data to session storage to avoid quota errors.
       const stateToSave = { enhancementType };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-    } catch (e) { console.error("Failed to save state to session storage", e); }
+    } catch (e: any) {
+        if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+            console.error("Failed to save state to session storage", e);
+        }
+    }
   }, [enhancementType]);
 
   const handleImageUpload = useCallback((base64: string, mimeType: string, file: File) => {

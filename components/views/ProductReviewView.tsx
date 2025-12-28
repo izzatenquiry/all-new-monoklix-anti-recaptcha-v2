@@ -163,7 +163,12 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
             voiceoverMode, voiceoverMood, musicStyle
         };
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-    } catch (e) { console.error("Failed to save state to session storage", e); }
+    } catch (e: any) {
+        // Only log if it's not a quota error (to avoid spam)
+        if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+            console.error("Failed to save state to session storage", e);
+        }
+    }
   }, [
     productDesc,
     selectedContentType, selectedLanguage, storyboard, includeCaptions, includeVoiceover,
@@ -972,7 +977,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-bold sm:text-3xl">AI Video Storyboard</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">AI Video Storyboard</h1>
         <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">A powerful 3-step workflow to generate a complete 4-scene product review video, from script to final clips.</p>
         <div className="flex gap-2 mt-2">
             <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-medium border border-blue-100 dark:border-blue-800">
@@ -984,14 +989,14 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
 
       {/* Step 1: Inputs and Storyboard Generation */}
       <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm">
-        <h2 className="text-xl font-bold mb-1">Step 1: Generate Script & Storyboard</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">Provide product details and creative direction to generate a 4-scene video script.</p>
+        <h2 className="text-lg sm:text-xl font-semibold mb-1">Step 1: Generate Script & Storyboard</h2>
+        <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mb-6">Provide product details and creative direction to generate a 4-scene video script.</p>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Inputs */}
           <div className="space-y-4">
             <div>
-                <h3 className="text-lg font-semibold mb-2">Include a Model?</h3>
+                <h3 className="text-base sm:text-lg font-semibold mb-2">Include a Model?</h3>
                 <select 
                     value={includeModel} 
                     onChange={e => {
@@ -1009,7 +1014,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                 </select>
             </div>
             <div>
-                <h3 className="text-lg font-semibold mb-2">Upload Your Assets</h3>
+                <h3 className="text-base sm:text-lg font-semibold mb-2">Upload Your Assets</h3>
                 <div className={`grid grid-cols-1 ${includeModel === 'Yes' ? 'sm:grid-cols-2' : ''} gap-4`}>
                     <ImageUpload key={productImageUploadKey} id="review-product-upload" onImageUpload={handleProductImageUpload} onRemove={handleRemoveProductImage} title="Product Photo" description="Clear, front-facing" language={language}/>
                     {includeModel === 'Yes' && (
@@ -1018,11 +1023,11 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                 </div>
             </div>
              <div>
-                <h3 className="text-lg font-semibold mb-2">Product Description & Key Selling Points</h3>
+                <h3 className="text-base sm:text-lg font-semibold mb-2">Product Description & Key Selling Points</h3>
                 <textarea value={productDesc} onChange={e => setProductDesc(e.target.value)} placeholder='e.g., "This is a new anti-aging serum. Key points: reduces wrinkles in 7 days, contains hyaluronic acid, suitable for sensitive skin..."' rows={4} className="w-full bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition" />
             </div>
              <div>
-                <h3 className="text-lg font-semibold mb-2">Creative Direction</h3>
+                <h3 className="text-base sm:text-lg font-semibold mb-2">Creative Direction</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div><label className="block text-sm font-medium mb-1">Content Type</label><select value={selectedContentType} onChange={e => setSelectedContentType(e.target.value)} className="w-full bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 text-sm">{contentTypeOptions.map(o=><option key={o}>{o}</option>)}</select></div>
                     <div><label className="block text-sm font-medium mb-1">Output Language</label><select value={selectedLanguage} onChange={e => { const newLang = e.target.value; setSelectedLanguage(newLang); setVideoLanguage(newLang); }} className="w-full bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 text-sm">{languages.map(o=><option key={o}>{o}</option>)}</select></div>
@@ -1060,7 +1065,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
           </div>
           {/* Right Column: Storyboard Output */}
           <div className="bg-neutral-100 dark:bg-neutral-800/50 rounded-lg p-4 relative min-h-[300px] flex flex-col">
-            <h3 className="text-lg font-semibold mb-2 flex-shrink-0">Generated Storyboard</h3>
+            <h3 className="text-base sm:text-lg font-semibold mb-2 flex-shrink-0">Generated Storyboard</h3>
             {storyboard && (
                  <button onClick={() => downloadText(storyboard, `monoklix-storyboard-${Date.now()}.txt`)} className="absolute top-4 right-4 text-xs bg-neutral-200 dark:bg-neutral-700 py-1 px-3 rounded-full flex items-center gap-1 z-10">
                     <DownloadIcon className="w-3 h-3"/> Download Text
@@ -1093,7 +1098,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
       {/* Step 2: Image Generation */}
       <div className={`bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm transition-opacity duration-500 ${step2Disabled ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
         <div className="flex justify-between items-center mb-1">
-            <h2 className="text-xl font-bold">Step 2: Generate Scene Images</h2>
+            <h2 className="text-lg sm:text-xl font-semibold">Step 2: Generate Scene Images</h2>
             <span className="text-xs bg-neutral-200 dark:bg-neutral-700 px-2 py-1 rounded font-mono">Aspect Ratio: {videoAspectRatio}</span>
         </div>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">Create a unique AI-generated image for each scene from your storyboard.</p>
@@ -1198,11 +1203,11 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
       
        {/* Step 3: Video Generation */}
       <div className={`bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm transition-opacity duration-500 ${step3Disabled ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-        <h2 className="text-xl font-bold mb-1">Step 3: Generate Scene Videos</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">Animate your generated scene images into video clips.</p>
+        <h2 className="text-lg sm:text-xl font-semibold mb-1">Step 3: Generate Scene Videos</h2>
+        <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mb-6">Animate your generated scene images into video clips.</p>
         
         <div className="mb-6 p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">Video Generation Settings</h3>
+            <h3 className="text-base sm:text-lg font-semibold mb-2">Video Generation Settings</h3>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                  <div>
                     <label className="block text-sm font-medium mb-1">Aspect Ratio</label>

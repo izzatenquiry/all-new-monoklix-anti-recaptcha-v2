@@ -55,7 +55,11 @@ const ContentIdeasView: React.FC<ContentIdeasViewProps> = ({ language }) => {
         try {
             const stateToSave = { topic, response, selectedLanguage };
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-        } catch (e) { console.error("Failed to save state to session storage", e); }
+        } catch (e: any) {
+            if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+                console.error("Failed to save state to session storage", e);
+            }
+        }
     }, [topic, response, selectedLanguage]);
 
 
@@ -105,7 +109,7 @@ const ContentIdeasView: React.FC<ContentIdeasViewProps> = ({ language }) => {
     const leftPanel = (
         <>
             <div>
-                <h1 className="text-xl font-bold sm:text-3xl">AI Content Idea Generator</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">AI Content Idea Generator</h1>
                 <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">Discover trending and engaging content ideas for any topic.</p>
             </div>
             

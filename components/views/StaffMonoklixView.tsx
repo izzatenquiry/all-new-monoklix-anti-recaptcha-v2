@@ -87,7 +87,11 @@ const StaffMonoklixView: React.FC<StaffMonoklixViewProps> = ({ language }) => {
         try {
             const stateToSave = { selectedAgentId, userInput, generatedCopy, selectedLanguage };
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-        } catch (e) { console.error("Failed to save state to session storage", e); }
+        } catch (e: any) {
+            if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+                console.error("Failed to save state to session storage", e);
+            }
+        }
     }, [selectedAgentId, userInput, generatedCopy, selectedLanguage]);
 
     const handleGenerate = useCallback(async () => {
@@ -141,8 +145,8 @@ const StaffMonoklixView: React.FC<StaffMonoklixViewProps> = ({ language }) => {
     const leftPanel = (
         <>
             <div>
-                <h1 className="text-lg font-bold sm:text-xl lg:text-3xl">{T.title}</h1>
-                <p className="text-xs sm:text-sm lg:text-base text-neutral-500 dark:text-neutral-400 mt-0.5 sm:mt-1">{T.subtitle}</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">{T.title}</h1>
+                <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 mt-1">{T.subtitle}</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -170,7 +174,7 @@ const StaffMonoklixView: React.FC<StaffMonoklixViewProps> = ({ language }) => {
             </div>
 
             <div>
-                <label htmlFor="agent-input" className="block text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">
+                <label htmlFor="agent-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
                     {T.inputFor} {selectedAgent.name}
                 </label>
                 <textarea
@@ -184,7 +188,7 @@ const StaffMonoklixView: React.FC<StaffMonoklixViewProps> = ({ language }) => {
             </div>
 
             <div>
-                <label htmlFor="agent-language" className="block text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">
+                <label htmlFor="agent-language" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
                     {T.outputLanguage}
                 </label>
                 <select

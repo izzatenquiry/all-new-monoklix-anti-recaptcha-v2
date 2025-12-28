@@ -53,8 +53,8 @@ const ClaimTokenModal: React.FC<{
         {status === 'searching' && (
             <>
             <Spinner />
-            <h2 className="text-xl font-bold mt-4">{T.searchingTitle}</h2>
-            <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-sm">
+            <h2 className="text-lg sm:text-xl font-semibold mt-4">{T.searchingTitle}</h2>
+            <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-sm sm:text-base">
                 {T.searchingMessage}
             </p>
             </>
@@ -62,8 +62,8 @@ const ClaimTokenModal: React.FC<{
         {status === 'success' && (
             <>
             <CheckCircleIcon className="w-12 h-12 text-green-500 mx-auto" />
-            <h2 className="text-xl font-bold mt-4">{T.successTitle}</h2>
-            <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-sm">
+            <h2 className="text-lg sm:text-xl font-semibold mt-4">{T.successTitle}</h2>
+            <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-sm sm:text-base">
                 {T.successMessage}
             </p>
             </>
@@ -71,8 +71,8 @@ const ClaimTokenModal: React.FC<{
         {status === 'error' && (
             <>
             <AlertTriangleIcon className="w-12 h-12 text-red-500 mx-auto" />
-            <h2 className="text-xl font-bold mt-4">{T.errorTitle}</h2>
-            <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-sm">
+            <h2 className="text-lg sm:text-xl font-semibold mt-4">{T.errorTitle}</h2>
+            <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-sm sm:text-base">
                 {error || T.errorMessageDefault}
             </p>
             <div className="mt-6 flex gap-4">
@@ -227,7 +227,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ currentUser, onUserUpdate, 
                 />
             )}
 
-            <h2 className="text-xl font-semibold mb-6">{T_Profile.title}</h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-6">{T_Profile.title}</h2>
             
             {/* Account Status Box */}
             <div className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-800/50 rounded-lg">
@@ -245,7 +245,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ currentUser, onUserUpdate, 
 
             {/* --- API CONFIGURATION SECTION --- */}
             <div className="mb-8">
-                 <h3 className="text-lg font-bold mb-4 text-neutral-800 dark:text-neutral-200">{T_Api.title}</h3>
+                 <h3 className="text-base sm:text-lg font-bold mb-4 text-neutral-800 dark:text-neutral-200">{T_Api.title}</h3>
                  
                  {/* Shared Key Info */}
                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 mb-4">
@@ -330,8 +330,8 @@ const CacheManagerPanel: React.FC<CacheManagerPanelProps> = ({ currentUser }) =>
         <div className="flex items-center gap-3 mb-6">
           <DatabaseIcon className="w-8 h-8 text-primary-500" />
           <div>
-            <h2 className="text-xl font-semibold">{T.title}</h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            <h2 className="text-lg sm:text-xl font-semibold">{T.title}</h2>
+            <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400">
               {T.subtitle}
             </p>
           </div>

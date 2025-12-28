@@ -85,7 +85,11 @@ const ProductAdView: React.FC<ProductAdViewProps> = ({ language }) => {
     try {
         const stateToSave = { productImage, productDesc, selections, storyboard };
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-    } catch (e) { console.error("Failed to save state to session storage", e); }
+    } catch (e: any) {
+        if (e.name !== 'QuotaExceededError' && e.code !== 22) {
+            console.error("Failed to save state to session storage", e);
+        }
+    }
   }, [productImage, productDesc, selections, storyboard]);
 
   const handleImageUpload = useCallback((base64: string, mimeType: string) => {
