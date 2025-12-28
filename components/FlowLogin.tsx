@@ -380,11 +380,11 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
-                    <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <InformationCircleIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm text-blue-800 dark:text-blue-200">
-                            <p className="font-semibold mb-2">Cara Mengambil Token dari Flow:</p>
-                            <ol className="text-xs space-y-1 list-decimal list-inside">
+                    <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-[0.5px] border-blue-200 dark:border-blue-800">
+                        <InformationCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                        <div className="text-[11px] sm:text-xs text-blue-800 dark:text-blue-200">
+                            <p className="text-[11px] sm:text-xs font-semibold mb-2">Cara Mengambil Token dari Flow:</p>
+                            <ol className="text-[11px] sm:text-xs space-y-1 list-decimal list-inside">
                                 <li>Klik tombol "Login Google Flow" untuk login ke akun Google Flow anda</li>
                                 <li>Selepas login, klik tombol "Get Token" untuk membuka halaman session API</li>
                                 <li>Copy token dari response JSON yang muncul</li>
@@ -404,12 +404,12 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                             Anti-Captcha Configuration
                         </h3>
 
-                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800 mb-4">
-                            <div className="flex items-start gap-3">
-                                <InformationCircleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                                <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    <p className="font-semibold mb-1">Required for Video/Image Generation</p>
-                                    <p>Google API requires reCAPTCHA v3 Enterprise tokens. Enable this to automatically solve captchas using <a href="https://anti-captcha.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">anti-captcha.com</a> service.</p>
+                        <div className="p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-[0.5px] border-yellow-200 dark:border-yellow-800 mb-4">
+                            <div className="flex items-start gap-2 sm:gap-3">
+                                <InformationCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                                <div className="text-[11px] sm:text-xs text-yellow-800 dark:text-yellow-200">
+                                    <p className="text-[11px] sm:text-xs font-semibold mb-1">Required for Video/Image Generation</p>
+                                    <p className="text-[11px] sm:text-xs">Google API requires reCAPTCHA v3 Enterprise tokens. Enable this to automatically solve captchas using <a href="https://anti-captcha.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">anti-captcha.com</a> service.</p>
                                 </div>
                             </div>
                         </div>

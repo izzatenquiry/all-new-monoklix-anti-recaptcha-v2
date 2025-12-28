@@ -248,10 +248,10 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ currentUser, onUserUpdate, 
                  <h3 className="text-base sm:text-lg font-bold mb-4 text-neutral-800 dark:text-neutral-200">{T_Api.title}</h3>
                  
                  {/* Shared Key Info */}
-                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 mb-4">
-                    <div className="flex items-start gap-3">
-                        <InformationCircleIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                 <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-[0.5px] border-blue-200 dark:border-blue-800 mb-4">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                        <InformationCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-[11px] sm:text-xs text-blue-800 dark:text-blue-200">
                             {T_Api.description}
                         </p>
                     </div>
@@ -338,23 +338,23 @@ const CacheManagerPanel: React.FC<CacheManagerPanelProps> = ({ currentUser }) =>
         </div>
 
         {/* Usage Statistics / Credits */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 border-b border-neutral-200 dark:border-neutral-800 pb-6">
-            <div className="p-4 bg-neutral-50 dark:bg-neutral-800/30 border border-neutral-200 dark:border-neutral-800 rounded-lg flex items-center justify-between transition-all hover:border-blue-200 dark:hover:border-blue-900/50">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 border-b border-neutral-200 dark:border-neutral-800 pb-6">
+            <div className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/30 border-[0.5px] border-neutral-200 dark:border-neutral-800 rounded-lg flex items-center justify-between transition-all hover:border-blue-200 dark:hover:border-blue-900/50">
                 <div>
-                    <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Images Generated</p>
-                    <p className="text-2xl font-bold text-neutral-800 dark:text-neutral-200">{currentUser.totalImage || 0}</p>
+                    <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Images Generated</p>
+                    <p className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200">{currentUser.totalImage || 0}</p>
                 </div>
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                    <ImageIcon className="w-5 h-5" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                    <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
             </div>
-            <div className="p-4 bg-neutral-50 dark:bg-neutral-800/30 border border-neutral-200 dark:border-neutral-800 rounded-lg flex items-center justify-between transition-all hover:border-purple-200 dark:hover:border-purple-900/50">
+            <div className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/30 border-[0.5px] border-neutral-200 dark:border-neutral-800 rounded-lg flex items-center justify-between transition-all hover:border-purple-200 dark:hover:border-purple-900/50">
                 <div>
-                    <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Videos Generated</p>
-                    <p className="text-2xl font-bold text-neutral-800 dark:text-neutral-200">{currentUser.totalVideo || 0}</p>
+                    <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Videos Generated</p>
+                    <p className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200">{currentUser.totalVideo || 0}</p>
                 </div>
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                    <VideoIcon className="w-5 h-5" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                    <VideoIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
             </div>
         </div>
@@ -365,22 +365,32 @@ const CacheManagerPanel: React.FC<CacheManagerPanelProps> = ({ currentUser }) =>
           </div>
         ) : stats ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">{T.storageUsed}</p>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.size}</p>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/30 border-[0.5px] border-neutral-200 dark:border-neutral-800 rounded-lg flex items-center justify-between transition-all hover:border-green-200 dark:hover:border-green-900/50">
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">{T.storageUsed}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200">{stats.size}</p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                  <DatabaseIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
               </div>
-              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">{T.videosCached}</p>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.count}</p>
+              <div className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/30 border-[0.5px] border-neutral-200 dark:border-neutral-800 rounded-lg flex items-center justify-between transition-all hover:border-purple-200 dark:hover:border-purple-900/50">
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">{T.videosCached}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200">{stats.count}</p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                  <VideoIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
               </div>
             </div>
             
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border-[0.5px] border-blue-200 dark:border-blue-800 rounded-lg">
+              <h3 className="text-[11px] sm:text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">
                 {T.howItWorks}
               </h3>
-              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+              <ul className="text-[11px] sm:text-xs text-blue-800 dark:text-blue-200 space-y-1">
                 <li>{T.l1}</li>
                 <li>{T.l2}</li>
                 <li>{T.l3}</li>
@@ -398,8 +408,8 @@ const CacheManagerPanel: React.FC<CacheManagerPanelProps> = ({ currentUser }) =>
             </div>
 
             <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
-              <h3 className="font-semibold mb-2">💡 {T.tips}</h3>
-              <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
+              <h3 className="text-[11px] sm:text-xs font-semibold mb-2">💡 {T.tips}</h3>
+              <ul className="text-[11px] sm:text-xs text-neutral-600 dark:text-neutral-400 space-y-1">
                 <li>{T.tip1}</li>
                 <li>{T.tip2}</li>
                 <li>{T.tip3}</li>

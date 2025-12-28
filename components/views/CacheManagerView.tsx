@@ -4,7 +4,7 @@ import {
   clearVideoCache,
   getCacheStats, // Import getCacheStats to get raw size
 } from '../../services/videoCacheService';
-import { TrashIcon, RefreshCwIcon, DatabaseIcon } from '../Icons';
+import { TrashIcon, RefreshCwIcon, DatabaseIcon, VideoIcon } from '../Icons';
 import Spinner from '../common/Spinner';
 
 // This is a rough estimation as the constant is not exported from the service.
@@ -77,23 +77,33 @@ const CacheManagerView: React.FC = () => {
         ) : stats ? (
           <div className="space-y-6">
             {/* Cache Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                  Storage Used
-                </p>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                  {stats.size}
-                </p>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/30 border-[0.5px] border-neutral-200 dark:border-neutral-800 rounded-lg flex items-center justify-between transition-all hover:border-green-200 dark:hover:border-green-900/50">
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
+                    Storage Used
+                  </p>
+                  <p className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200">
+                    {stats.size}
+                  </p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                  <DatabaseIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
               </div>
 
-              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                  Videos Cached
-                </p>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                  {stats.count}
-                </p>
+              <div className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/30 border-[0.5px] border-neutral-200 dark:border-neutral-800 rounded-lg flex items-center justify-between transition-all hover:border-purple-200 dark:hover:border-purple-900/50">
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
+                    Videos Cached
+                  </p>
+                  <p className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200">
+                    {stats.count}
+                  </p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                  <VideoIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
               </div>
             </div>
 
@@ -123,11 +133,11 @@ const CacheManagerView: React.FC = () => {
             </div>
 
             {/* Information */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border-[0.5px] border-blue-200 dark:border-blue-800 rounded-lg">
+              <h3 className="text-[11px] sm:text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">
                 How Video Caching Works
               </h3>
-              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+              <ul className="text-[11px] sm:text-xs text-blue-800 dark:text-blue-200 space-y-1">
                 <li>• Videos are stored locally in your browser</li>
                 <li>• Maximum cache size: 500 MB</li>
                 <li>• Maximum videos: 50</li>
@@ -168,8 +178,8 @@ const CacheManagerView: React.FC = () => {
 
             {/* Tips */}
             <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
-              <h3 className="font-semibold mb-2">💡 Tips</h3>
-              <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
+              <h3 className="text-[11px] sm:text-xs font-semibold mb-2">💡 Tips</h3>
+              <ul className="text-[11px] sm:text-xs text-neutral-600 dark:text-neutral-400 space-y-1">
                 <li>• Clear cache if videos are not loading properly</li>
                 <li>• Old videos are automatically removed to save space</li>
                 <li>• Cache is shared across all tabs of this website</li>
