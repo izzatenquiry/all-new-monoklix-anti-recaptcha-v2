@@ -104,6 +104,7 @@ export interface User {
   forceLogoutAt?: string;
   appVersion?: string;
   personalAuthToken?: string | null;
+  recaptchaToken?: string | null;
   proxyServer?: string | null;
   batch_02?: string | null;
   lastDevice?: string | null;

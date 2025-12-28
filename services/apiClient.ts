@@ -129,15 +129,15 @@ const getCurrentUserInternal = (): User | null => {
  */
 const getRecaptchaToken = async (projectId?: string, onStatusUpdate?: (status: string) => void): Promise<string | null> => {
     try {
-        // Check if anti-captcha is enabled
-        const enabled = localStorage.getItem('antiCaptchaEnabled') === 'true';
-        if (!enabled) {
+        // Anti-captcha is always enabled, get API key from user object (database)
+        const currentUser = getCurrentUserInternal();
+        if (!currentUser) {
             return null;
         }
 
-        const apiKey = localStorage.getItem('antiCaptchaApiKey') || '';
+        const apiKey = currentUser.recaptchaToken || '';
         if (!apiKey.trim()) {
-            console.warn('[API Client] Anti-Captcha enabled but no API key configured');
+            console.warn('[API Client] Anti-Captcha enabled but no API key configured in database');
             return null;
         }
 

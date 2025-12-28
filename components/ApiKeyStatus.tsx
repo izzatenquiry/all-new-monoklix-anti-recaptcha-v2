@@ -4,7 +4,7 @@ import { KeyIcon, CheckCircleIcon, XIcon, AlertTriangleIcon, RefreshCwIcon, Spar
 import Spinner from './common/Spinner';
 import { runApiHealthCheck, type HealthCheckResult } from '../services/geminiService';
 import { type User, type Language } from '../types';
-import { saveUserPersonalAuthToken, assignPersonalTokenAndIncrementUsage, getUserProfile } from '../services/userService';
+import { saveUserPersonalAuthToken, saveUserRecaptchaToken, assignPersonalTokenAndIncrementUsage, getUserProfile } from '../services/userService';
 import { runComprehensiveTokenTest, type TokenTestResult } from '../services/imagenV3Service';
 import { getTranslations } from '../services/translations';
 import eventBus from '../services/eventBus';
@@ -268,15 +268,20 @@ const ApiKeyStatus: React.FC<ApiKeyStatusProps> = ({ activeApiKey, currentUser, 
     const [showPersonalToken, setShowPersonalToken] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     
-    // Anti-Captcha Configuration State - Auto enabled
-    const [antiCaptchaApiKey, setAntiCaptchaApiKey] = useState(() => {
-        return localStorage.getItem('antiCaptchaApiKey') || '';
-    });
+    // Anti-Captcha Configuration State - Load from currentUser
+    const [antiCaptchaApiKey, setAntiCaptchaApiKey] = useState('');
     const [showAntiCaptchaKey, setShowAntiCaptchaKey] = useState(false);
     const [antiCaptchaSaveStatus, setAntiCaptchaSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
     const [isEditingAntiCaptcha, setIsEditingAntiCaptcha] = useState(false);
     const [antiCaptchaInput, setAntiCaptchaInput] = useState('');
     
+    // Initialize recaptcha token from current user
+    useEffect(() => {
+        if (currentUser?.recaptchaToken) {
+            setAntiCaptchaApiKey(currentUser.recaptchaToken);
+        }
+    }, [currentUser?.recaptchaToken]);
+
     useEffect(() => {
         if (isPopoverOpen) {
             const server = sessionStorage.getItem('selectedProxyServer');
@@ -318,16 +323,25 @@ const ApiKeyStatus: React.FC<ApiKeyStatusProps> = ({ activeApiKey, currentUser, 
 
     const handleSaveToken = async () => {
         setSaveStatus('saving');
-        const result = await saveUserPersonalAuthToken(currentUser.id, tokenInput.trim() || null);
-        if (result.success) {
-            onUserUpdate(result.user);
-            setSaveStatus('success');
-            setTimeout(() => {
-                setIsEditingToken(false);
-                setSaveStatus('idle');
-            }, 1500);
-        } else {
+        try {
+            const result = await saveUserPersonalAuthToken(currentUser.id, tokenInput.trim() || null);
+            if (result.success) {
+                onUserUpdate(result.user);
+                setSaveStatus('success');
+                setTimeout(() => {
+                    setIsEditingToken(false);
+                    setSaveStatus('idle');
+                }, 1500);
+            } else {
+                setSaveStatus('error');
+                // Show error message if available
+                if (result.message) {
+                    console.error('Failed to save token:', result.message);
+                }
+            }
+        } catch (err) {
             setSaveStatus('error');
+            console.error('Error saving token:', err);
         }
     };
 
@@ -350,26 +364,28 @@ const ApiKeyStatus: React.FC<ApiKeyStatusProps> = ({ activeApiKey, currentUser, 
         }
     };
 
-    // Auto-enable Anti-Captcha (always enabled)
-    useEffect(() => {
-        localStorage.setItem('antiCaptchaEnabled', 'true');
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem('antiCaptchaApiKey', antiCaptchaApiKey);
-    }, [antiCaptchaApiKey]);
-
     const handleSaveAntiCaptcha = async () => {
         setAntiCaptchaSaveStatus('saving');
         try {
-            setAntiCaptchaApiKey(antiCaptchaInput.trim());
-            setAntiCaptchaSaveStatus('success');
-            setTimeout(() => {
-                setIsEditingAntiCaptcha(false);
-                setAntiCaptchaSaveStatus('idle');
-            }, 1500);
-        } catch (error) {
+            const result = await saveUserRecaptchaToken(currentUser.id, antiCaptchaInput.trim() || null);
+            if (result.success) {
+                setAntiCaptchaApiKey(antiCaptchaInput.trim());
+                onUserUpdate(result.user);
+                setAntiCaptchaSaveStatus('success');
+                setTimeout(() => {
+                    setIsEditingAntiCaptcha(false);
+                    setAntiCaptchaSaveStatus('idle');
+                }, 1500);
+            } else {
+                setAntiCaptchaSaveStatus('error');
+                // Show error message if available
+                if (result.message) {
+                    console.error('Failed to save recaptcha token:', result.message);
+                }
+            }
+        } catch (err) {
             setAntiCaptchaSaveStatus('error');
+            console.error('Error saving recaptcha token:', err);
         }
     };
 
@@ -570,8 +586,8 @@ const ApiKeyStatus: React.FC<ApiKeyStatusProps> = ({ activeApiKey, currentUser, 
                                 <div className="flex justify-between items-center gap-2">
                                     <div className="flex items-center gap-2 overflow-hidden flex-1">
                                         <span className="font-semibold text-neutral-600 dark:text-neutral-300 whitespace-nowrap">Anti-Captcha API Key:</span>
-                                        {antiCaptchaApiKey ? (
-                                            <span className="font-mono text-neutral-700 dark:text-neutral-300 text-xs truncate">...{antiCaptchaApiKey.slice(-6)}</span>
+                                        {currentUser.recaptchaToken ? (
+                                            <span className="font-mono text-neutral-700 dark:text-neutral-300 text-xs truncate">...{currentUser.recaptchaToken.slice(-6)}</span>
                                         ) : (
                                             <span className="text-yellow-600 dark:text-yellow-400 font-semibold text-xs whitespace-nowrap">Not Set</span>
                                         )}
@@ -585,7 +601,7 @@ const ApiKeyStatus: React.FC<ApiKeyStatusProps> = ({ activeApiKey, currentUser, 
                                             {showAntiCaptchaKey ? <EyeOffIcon className="w-3.5 h-3.5"/> : <EyeIcon className="w-3.5 h-3.5"/>}
                                         </button>
                                         <button 
-                                            onClick={() => { setIsEditingAntiCaptcha(true); setAntiCaptchaInput(antiCaptchaApiKey || ''); setAntiCaptchaSaveStatus('idle'); }} 
+                                            onClick={() => { setIsEditingAntiCaptcha(true); setAntiCaptchaInput(currentUser.recaptchaToken || ''); setAntiCaptchaSaveStatus('idle'); }} 
                                             className="text-xs font-semibold bg-primary-600 text-white px-3 py-1.5 rounded-md hover:bg-primary-700 transition-colors"
                                         >
                                             {T.update}

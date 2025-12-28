@@ -59,6 +59,7 @@ const mapProfileToUser = (
     forceLogoutAt: profile.force_logout_at || undefined,
     appVersion: profile.app_version || undefined,
     personalAuthToken: profile.personal_auth_token || undefined,
+    recaptchaToken: profile.recaptcha_token || undefined,
     proxyServer: profile.proxy_server || undefined,
     batch_02: profile.batch_02 || undefined,
     lastDevice: profile.last_device || undefined,
@@ -325,6 +326,35 @@ export const saveUserPersonalAuthToken = async (
         if (message.includes("column") && message.includes("does not exist")) {
              if (message.includes('personal_auth_token')) {
                  return { success: false, message: 'DB_SCHEMA_MISSING_COLUMN_personal_auth_token' };
+             }
+        }
+        return { success: false, message: message };
+    }
+    
+    const typedData = updatedData as UserProfileData;
+    const updatedProfile = mapProfileToUser(typedData);
+    
+    return { success: true, user: updatedProfile };
+};
+
+// Update user's recaptcha token (Anti-Captcha API Key)
+export const saveUserRecaptchaToken = async (
+  userId: string,
+  token: string | null
+): Promise<{ success: true; user: User } | { success: false; message: string }> => {
+    const { data: updatedData, error } = await supabase
+        .from('users')
+        .update({ recaptcha_token: token })
+        .eq('id', userId)
+        .select()
+        .single();
+
+    if (error || !updatedData) {
+        const message = getErrorMessage(error);
+        // Check for the specific schema error
+        if (message.includes("column") && message.includes("does not exist")) {
+             if (message.includes('recaptcha_token')) {
+                 return { success: false, message: 'DB_SCHEMA_MISSING_COLUMN_recaptcha_token' };
              }
         }
         return { success: false, message: message };

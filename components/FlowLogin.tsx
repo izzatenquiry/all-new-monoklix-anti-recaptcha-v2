@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { saveUserPersonalAuthToken } from '../services/userService';
+import { saveUserPersonalAuthToken, saveUserRecaptchaToken } from '../services/userService';
 import { type User } from '../types';
 import { KeyIcon, CheckCircleIcon, XIcon, AlertTriangleIcon, InformationCircleIcon, EyeIcon, EyeOffIcon, SparklesIcon } from './Icons';
 import Spinner from './common/Spinner';
@@ -23,40 +23,42 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
     const [testResults, setTestResults] = useState<TokenTestResult[] | null>(null);
     const [tokenSaved, setTokenSaved] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const recaptchaSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isInitialMount = useRef(true);
     const T = getTranslations().settingsView;
     const T_Api = T.api;
 
-    // Anti-Captcha Configuration State
-    const [enableAntiCaptcha, setEnableAntiCaptcha] = useState(() => {
-        return localStorage.getItem('antiCaptchaEnabled') === 'true';
-    });
-    const [antiCaptchaApiKey, setAntiCaptchaApiKey] = useState(() => {
-        return localStorage.getItem('antiCaptchaApiKey') || '';
-    });
+    // Anti-Captcha Configuration State - Load from currentUser
+    const [enableAntiCaptcha, setEnableAntiCaptcha] = useState(true); // Always enabled
+    const [antiCaptchaApiKey, setAntiCaptchaApiKey] = useState('');
     const [antiCaptchaProjectId, setAntiCaptchaProjectId] = useState(() => {
-        return localStorage.getItem('antiCaptchaProjectId') || '';
+        return localStorage.getItem('antiCaptchaProjectId') || ''; // Keep projectId in localStorage for now
     });
     const [showAntiCaptchaKey, setShowAntiCaptchaKey] = useState(false);
     const [antiCaptchaTestStatus, setAntiCaptchaTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
     const [antiCaptchaTestMessage, setAntiCaptchaTestMessage] = useState<string>('');
-    const [apiKeySaved, setApiKeySaved] = useState(false);
+    const [recaptchaTokenSaved, setRecaptchaTokenSaved] = useState(false);
+    const [isSavingRecaptcha, setIsSavingRecaptcha] = useState(false);
     
     // Initialize token from current user
     useEffect(() => {
         if (currentUser?.personalAuthToken) {
             setFlowToken(currentUser.personalAuthToken);
         }
-    }, [currentUser?.personalAuthToken]);
+        // Initialize recaptcha token from current user
+        if (currentUser?.recaptchaToken) {
+            setAntiCaptchaApiKey(currentUser.recaptchaToken);
+        }
+        // Mark initial mount as complete after first render
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+        }
+    }, [currentUser?.personalAuthToken, currentUser?.recaptchaToken]);
 
     // Auto-save Flow Token with debounce (2 seconds after user stops typing)
     useEffect(() => {
-        // Clear previous timeout
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-
-        // Don't save if token is empty or same as current user's token
-        if (!flowToken.trim() || flowToken.trim() === currentUser?.personalAuthToken) {
+        // Skip auto-save on initial mount
+        if (isInitialMount.current) {
             return;
         }
 
@@ -65,11 +67,28 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
             return;
         }
 
+        // Don't save if token is empty or same as current user's token
+        if (!flowToken.trim() || flowToken.trim() === currentUser?.personalAuthToken) {
+            // Clear any existing timeout if token is empty or unchanged
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = null;
+            }
+            return;
+        }
+
+        // Clear previous timeout
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
         // Set debounce timer
         saveTimeoutRef.current = setTimeout(async () => {
             try {
                 setIsSaving(true);
                 setError(null);
+                setSuccessMessage(null);
+                
                 const result = await saveUserPersonalAuthToken(currentUser.id, flowToken.trim());
                 
                 if (result.success) {
@@ -84,10 +103,37 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                         setSuccessMessage(null);
                     }, 3000);
                 } else {
-                    setError(result.message || 'Failed to save token');
+                    // Handle specific error cases
+                    const errorMessage = result.message || 'Failed to save token';
+                    setError(errorMessage);
+                    
+                    // Clear error after 5 seconds
+                    setTimeout(() => {
+                        setError(null);
+                    }, 5000);
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'An error occurred');
+                // Better error handling for network/API errors
+                let errorMessage = 'An error occurred while saving token';
+                
+                if (err instanceof Error) {
+                    errorMessage = err.message;
+                    // Handle specific error types
+                    if (err.message.includes('Load failed') || err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+                        errorMessage = 'Network error: Unable to connect to server. Please check your internet connection and try again.';
+                    } else if (err.message.includes('TypeError')) {
+                        errorMessage = 'Connection error: Please check your internet connection and try again.';
+                    }
+                } else if (typeof err === 'string') {
+                    errorMessage = err;
+                }
+                
+                setError(errorMessage);
+                
+                // Clear error after 5 seconds
+                setTimeout(() => {
+                    setError(null);
+                }, 5000);
             } finally {
                 setIsSaving(false);
             }
@@ -97,25 +143,102 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
         return () => {
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = null;
             }
         };
     }, [flowToken, currentUser, onUserUpdate]);
 
-    // Save Anti-Captcha settings to localStorage
+    // Auto-save Recaptcha Token (Anti-Captcha API Key) with debounce (2 seconds after user stops typing)
     useEffect(() => {
-        localStorage.setItem('antiCaptchaEnabled', enableAntiCaptcha.toString());
-    }, [enableAntiCaptcha]);
-
-    useEffect(() => {
-        if (antiCaptchaApiKey.trim()) {
-            localStorage.setItem('antiCaptchaApiKey', antiCaptchaApiKey);
-            setApiKeySaved(true);
-            // Clear saved indicator after 2 seconds
-            const timer = setTimeout(() => setApiKeySaved(false), 2000);
-            return () => clearTimeout(timer);
+        // Skip auto-save on initial mount
+        if (isInitialMount.current) {
+            return;
         }
-    }, [antiCaptchaApiKey]);
 
+        // Don't save if user is not logged in
+        if (!currentUser) {
+            return;
+        }
+
+        // Don't save if token is empty or same as current user's recaptcha token
+        if (!antiCaptchaApiKey.trim() || antiCaptchaApiKey.trim() === currentUser?.recaptchaToken) {
+            // Clear any existing timeout if token is empty or unchanged
+            if (recaptchaSaveTimeoutRef.current) {
+                clearTimeout(recaptchaSaveTimeoutRef.current);
+                recaptchaSaveTimeoutRef.current = null;
+            }
+            return;
+        }
+
+        // Clear previous timeout
+        if (recaptchaSaveTimeoutRef.current) {
+            clearTimeout(recaptchaSaveTimeoutRef.current);
+        }
+
+        // Set debounce timer
+        recaptchaSaveTimeoutRef.current = setTimeout(async () => {
+            try {
+                setIsSavingRecaptcha(true);
+                setError(null);
+                
+                const result = await saveUserRecaptchaToken(currentUser.id, antiCaptchaApiKey.trim());
+                
+                if (result.success) {
+                    setRecaptchaTokenSaved(true);
+                    if (onUserUpdate) {
+                        onUserUpdate(result.user);
+                    }
+                    // Clear saved indicator after 3 seconds
+                    setTimeout(() => {
+                        setRecaptchaTokenSaved(false);
+                    }, 3000);
+                } else {
+                    // Handle specific error cases
+                    const errorMessage = result.message || 'Failed to save recaptcha token';
+                    setError(errorMessage);
+                    
+                    // Clear error after 5 seconds
+                    setTimeout(() => {
+                        setError(null);
+                    }, 5000);
+                }
+            } catch (err) {
+                // Better error handling for network/API errors
+                let errorMessage = 'An error occurred while saving recaptcha token';
+                
+                if (err instanceof Error) {
+                    errorMessage = err.message;
+                    // Handle specific error types
+                    if (err.message.includes('Load failed') || err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+                        errorMessage = 'Network error: Unable to connect to server. Please check your internet connection and try again.';
+                    } else if (err.message.includes('TypeError')) {
+                        errorMessage = 'Connection error: Please check your internet connection and try again.';
+                    }
+                } else if (typeof err === 'string') {
+                    errorMessage = err;
+                }
+                
+                setError(errorMessage);
+                
+                // Clear error after 5 seconds
+                setTimeout(() => {
+                    setError(null);
+                }, 5000);
+            } finally {
+                setIsSavingRecaptcha(false);
+            }
+        }, 2000); // Wait 2 seconds after user stops typing
+
+        // Cleanup
+        return () => {
+            if (recaptchaSaveTimeoutRef.current) {
+                clearTimeout(recaptchaSaveTimeoutRef.current);
+                recaptchaSaveTimeoutRef.current = null;
+            }
+        };
+    }, [antiCaptchaApiKey, currentUser, onUserUpdate]);
+
+    // Keep projectId in localStorage for now (optional field)
     useEffect(() => {
         localStorage.setItem('antiCaptchaProjectId', antiCaptchaProjectId);
     }, [antiCaptchaProjectId]);
@@ -184,11 +307,21 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                 }, 3000);
             } else {
                 setSaveStatus('error');
-                setError(result.message || 'Failed to save token');
+                const errorMessage = result.message || 'Failed to save token';
+                setError(errorMessage);
+                // Clear error after 5 seconds
+                setTimeout(() => {
+                    setError(null);
+                }, 5000);
             }
         } catch (err) {
             setSaveStatus('error');
-            setError(err instanceof Error ? err.message : 'An error occurred');
+            const errorMessage = err instanceof Error ? err.message : 'An error occurred while saving token';
+            setError(errorMessage);
+            // Clear error after 5 seconds
+            setTimeout(() => {
+                setError(null);
+            }, 5000);
         } finally {
             setIsSaving(false);
         }
@@ -289,8 +422,19 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                                 type={showToken ? 'text' : 'password'}
                                 value={flowToken}
                                 onChange={(e) => {
-                                    setFlowToken(e.target.value);
+                                    const newValue = e.target.value;
+                                    setFlowToken(newValue);
                                     setTestResults(null);
+                                    // Clear error when user starts typing again
+                                    if (error) {
+                                        setError(null);
+                                    }
+                                }}
+                                onPaste={(e) => {
+                                    // Clear error on paste
+                                    if (error) {
+                                        setError(null);
+                                    }
                                 }}
                                 placeholder="Paste your Flow token here"
                                 className="w-full px-4 py-3 pr-20 bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"
@@ -445,8 +589,11 @@ const FlowLogin: React.FC<FlowLoginProps> = ({ currentUser, onUserUpdate }) => {
                                             className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2.5 pr-10 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors font-mono text-sm"
                                         />
                                         <div className="absolute inset-y-0 right-0 flex items-center gap-2 pr-2">
-                                            {apiKeySaved && antiCaptchaApiKey.trim() && (
+                                            {recaptchaTokenSaved && antiCaptchaApiKey.trim() && (
                                                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">Saved</span>
+                                            )}
+                                            {isSavingRecaptcha && (
+                                                <Spinner />
                                             )}
                                             <button
                                                 onClick={() => setShowAntiCaptchaKey(!showAntiCaptchaKey)}
